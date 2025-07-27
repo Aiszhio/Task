@@ -1,24 +1,33 @@
 include .env
 
-.PHONY: build run down logs
+.PHONY: build up down logs
 build:
 	export COMPOSE_BAKE=true && \
 	docker-compose build
 
-run:
+up:
 	docker-compose up -d
 
 down:
-	docker-compose down
+	docker-compose down -v
 
 logs:
 	docker-compose logs -f api
 
-.PHONY: goose-up goose-down
+.PHONY: goose-add goose-up goose-down goose-status
+
+goose-add:
+	goose -dir ./migrations postgres "$(DATABASE_DSN)" create $(NAME) sql
+
 goose-up:
-	docker-compose run --rm api \
-    	  goose -dir ./migrations postgres "$(DATABASE_DSN)" up
+	goose -dir ./migrations postgres "$(DATABASE_DSN)" up
 
 goose-down:
-	docker-compose run --rm api \
-    	  goose -dir ./migrations postgres "$(DATABASE_DSN)" down
+	goose -dir ./migrations postgres "$(DATABASE_DSN)" down
+
+goose-status:
+	goose -dir ./migrations postgres "$(DATABASE_DSN)" status
+
+.PHONY: lint
+lint:
+	golangci-lint run
